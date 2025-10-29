@@ -21,11 +21,14 @@
     "postinstall": "sh ./scripts/postinstall.sh"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.38.0",
     "eslint": "^9.38.0",
-    "prettier": "^3.6.0",
-    "vitest": "^4.0.4",
+    "globals": "^16.4.0",
     "playwright": "^1.56.0",
-    "pnpm": "^8.0.0"
+    "pnpm": "^8.0.0",
+    "prettier": "^3.6.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.4"
   }
 }
