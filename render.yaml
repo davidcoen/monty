@@ -1,0 +1,17 @@
+services:
+  - type: postgres
+    name: monty-db
+    plan: starter
+    disk: 10
+
+  - type: web_service
+    name: monty-web
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: pnpm i && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: monty-db
+    preDeploy: pnpm db:migrate

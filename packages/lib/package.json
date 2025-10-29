@@ -1,0 +1,10 @@
+{
+  "name": "@monty/lib",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "./sim": "./sim/src/index.ts",
+    "./plan": "./plan/src/index.ts",
+    "./tax": "./tax/src/index.ts"
+  }
+}

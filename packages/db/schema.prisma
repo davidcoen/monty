@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Placeholder User model so Prisma can generate client and migrations.
+// Domain models (accounts, scenarios, runs) will be added later.
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+}

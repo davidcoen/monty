@@ -1,0 +1,31 @@
+{
+  "name": "monty",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -w --filter ./apps/web dev",
+    "build": "pnpm -w --parallel build",
+    "start": "pnpm -w --filter ./apps/web start",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "db:push": "pnpm -w --filter ./packages/db prisma db push",
+    "db:migrate": "pnpm -w --filter ./packages/db prisma migrate deploy",
+    "db:studio": "pnpm -w --filter ./packages/db prisma studio",
+    "postinstall": "sh ./scripts/postinstall.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "eslint": "^9.38.0",
+    "prettier": "^3.6.0",
+    "vitest": "^4.0.4",
+    "playwright": "^1.56.0",
+    "pnpm": "^8.0.0"
+  }
+}
