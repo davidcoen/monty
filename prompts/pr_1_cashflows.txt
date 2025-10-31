@@ -1,0 +1,142 @@
+PR: Add CashFlow model (cents), yearly paste, offsets, and net-series resolver
+
+Goal
+
+Store multiple named income/expense rows as yearly series in cents, support future starts via offset (no manual zero-padding), and compute a consolidated net cashflow series for the simulator.
+
+⸻
+
+Prisma schema changes
+
+// enums
+enum FlowKind { INCOME EXPENSE }
+enum Indexing { NOMINAL REAL }
+
+model Scenario {
+  id              String   @id @default(cuid())
+  name            String
+  years           Int
+  inflationAnnual Float    @default(0)
+  seriesIndexing  Indexing @default(NOMINAL)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  cashFlows       CashFlow[]
+  runs            SimulationRun[]
+}
+
+model CashFlow {
+  id               String    @id @default(cuid())
+  scenarioId       String
+  scenario         Scenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  kind             FlowKind          // INCOME or EXPENSE
+  label            String            // "Salary", "Groceries", etc.
+  category         String?           // optional grouping
+  startOffsetYears Int               @default(0) // 0 = starts at t=0; 3 = year 4
+  indexing         Indexing          @default(NOMINAL)
+
+  amountCents      Int[]             // yearly amounts in cents, no leading zeros
+
+  order            Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([scenarioId, kind])
+}
+
+Library utilities (packages/lib/plan/series.ts)
+
+// Parse dollars (e.g., "150000, 155000 ...") -> cents int[]
+export function parseDollarsToCents(text: string): number[] {
+  return text
+    .split(/[, \t\r\n]+/)
+    .filter(Boolean)
+    .map(Number)
+    .map(v => (Number.isFinite(v) ? Math.round(v * 100) : 0));
+}
+
+// Place a series into the scenario horizon using a start offset
+export function placeWithOffset(series: number[], years: number, offsetYears: number): number[] {
+  const out = Array(years).fill(0);
+  for (let i = 0; i < series.length && offsetYears + i < years; i++) {
+    if (offsetYears + i >= 0) out[offsetYears + i] = series[i];
+  }
+  return out;
+}
+
+// Nominal <-> Real (cents-safe)
+export function centsNominalToReal(arrCents: number[], inflation: number): number[] {
+  return arrCents.map((c, t) => Math.round(c / Math.pow(1 + inflation, t)));
+}
+export function centsRealToNominal(arrCents: number[], inflation: number): number[] {
+  return arrCents.map((c, t) => Math.round(c * Math.pow(1 + inflation, t)));
+}
+
+export type Indexing = "NOMINAL" | "REAL";
+export type CashFlowLite = {
+  amountCents: number[];
+  startOffsetYears: number;
+  indexing: Indexing;
+};
+
+// Build net series (cents) aligned to horizon and kernel indexing
+export function resolveNetCents(
+  incomes: CashFlowLite[],
+  expenses: CashFlowLite[],
+  years: number,
+  inflation: number,
+  kernelWants: Indexing // "REAL" recommended
+): number[] {
+  const sumSide = (rows: CashFlowLite[]) => {
+    const acc = Array(years).fill(0);
+    for (const r of rows) {
+      const placed = placeWithOffset(r.amountCents, years, r.startOffsetYears);
+      const coerced =
+        r.indexing === kernelWants
+          ? placed
+          : kernelWants === "REAL"
+          ? centsNominalToReal(placed, inflation)
+          : centsRealToNominal(placed, inflation);
+      for (let t = 0; t < years; t++) acc[t] += coerced[t];
+    }
+    return acc;
+  };
+
+  const inc = sumSide(incomes);
+  const exp = sumSide(expenses);
+  return inc.map((c, t) => c - exp[t]);
+}
+
+Server action outline
+	•	Create/Update CashFlow
+	•	Parse textarea with parseDollarsToCents(...) → amountCents.
+	•	Save kind, label, category?, startOffsetYears, indexing, amountCents.
+	•	On any add/update/delete
+	•	Load all CashFlows for the scenario.
+	•	Split into incomes/expenses; call resolveNetCents(...) with kernelWants = "REAL" (or your choice).
+	•	Store the resolved net series alongside the run assumptions (or cache on Scenario if desired).
+
+⸻
+
+Minimal UI (scenario page)
+	•	Fields per row: Label, Kind, Indexing, Start Offset (years), Series textarea.
+	•	“Preview” panel shows:
+	•	First 10 years of aligned income sum / expense sum / net (in dollars, divide by 100 for display).
+
+⸻
+
+Tests (Vitest)
+	•	Parsing: tolerates commas/whitespace; rounds to nearest cent.
+	•	Offsets: positive offsets shift series; clipping at horizon works.
+	•	Nominal/Real conversions round per year to nearest cent.
+	•	Mixed-indexing rows coerce correctly to target indexing.
+
+⸻
+
+Acceptance criteria
+	•	Schema migrates; CashFlow uses amountCents Int[] and startOffsetYears.
+	•	CRUD works; deleting a Scenario cascades to CashFlows.
+	•	Resolver returns correct cents net series for mixed rows/indexing/offsets.
+	•	Basic UI paste/preview behaves as expected.
