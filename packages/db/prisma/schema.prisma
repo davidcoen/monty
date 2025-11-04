@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FlowKind {
+  INCOME
+  EXPENSE
+}
+
+enum Indexing {
+  NOMINAL
+  REAL
+}
+
+model Scenario {
+  id              String    @id @default(cuid())
+  name            String
+  startYear       Int
+  years           Int
+  inflationAnnual Float     @default(0)
+  seriesIndexing  Indexing  @default(NOMINAL)
+  netCashflowCents Int[]    @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cashFlows CashFlow[]
+  runs      SimulationRun[]
+}
+
+model CashFlow {
+  id         String   @id @default(cuid())
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  kind        FlowKind
+  label       String
+  category    String?
+  startYear   Int
+  indexing    Indexing @default(NOMINAL)
+  amountCents Int[]
+
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scenarioId, kind])
+  @@index([scenarioId, startYear])
+}
+
+model SimulationRun {
+  id         String   @id @default(cuid())
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+}
