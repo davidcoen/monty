@@ -2,11 +2,20 @@
   "name": "@monty/db",
   "private": true,
   "version": "0.0.0",
+  "main": "src/client.ts",
+  "types": "src/client.ts",
+  "exports": {
+    ".": "./src/client.ts"
+  },
   "scripts": {
     "prisma": "prisma",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio"
+  },
+  "devDependencies": {
+    "prisma": "^5.0.0",
+    "@types/node": "^18.0.0"
   },
   "dependencies": {
     "@prisma/client": "5.0.0",

@@ -10,8 +10,8 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/packages/db": ["packages/db/src"],
-      "@/packages/lib/*": ["packages/lib/*/src"]
+      "@monty/db": ["packages/db/src/client.ts"],
+      "@monty/lib/*": ["packages/lib/*/src"],
     }
   }
 }

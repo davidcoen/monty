@@ -9,13 +9,7 @@ const config = {
   typescript: { ignoreBuildErrors: false },
   eslint: { dirs: ['app', 'components', 'lib'] },
   transpilePackages: ['@monty/lib'],
-  webpack: (cfg) => {
-    cfg.resolve = cfg.resolve || {};
-    cfg.resolve.alias = cfg.resolve.alias || {};
-    cfg.resolve.alias['@/packages/db'] = join(__dirname, '..', '..', 'packages/db/src');
-    cfg.resolve.alias['@monty/lib/plan'] = join(__dirname, '..', '..', 'packages/lib/plan/src');
-    return cfg;
-  },
+  webpack: (cfg) => cfg
 };
 
 export default config;

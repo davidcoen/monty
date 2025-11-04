@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { FlowKind, Indexing as PrismaIndexing } from '@prisma/client'
 
-import { prisma } from '@/packages/db/client'
+import { prisma } from '@monty/db'
 import { parseDollarsToCents } from '@monty/lib/plan'
 
 import { buildScenarioPreview } from '../scenario/preview'
